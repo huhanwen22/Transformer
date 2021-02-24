@@ -5,6 +5,7 @@ from positional_encoding import positional_encoding
 Transformer模型结构定义
 """
 
+
 class Transformer(tf.keras.Model):
     def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size,
                  target_vocab_size, pe_input, pe_target, rate=0.1):
@@ -19,7 +20,6 @@ class Transformer(tf.keras.Model):
         self.final_layer = tf.keras.layers.Dense(target_vocab_size)
 
     def call(self, inp, tar, training, enc_padding_mask, look_ahead_mask, dec_padding_mask):
-
         enc_output = self.tokenizer(inp, training, enc_padding_mask)  # (batch_size, inp_seq_len, d_model)
 
         # dec_output.shape == (batch_size, tar_seq_len, d_model)
@@ -43,14 +43,12 @@ class Encoder(tf.keras.layers.Layer):
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 self.d_model)
 
-
         self.enc_layers = [EncoderLayer(d_model, num_heads, dff, rate)
                            for _ in range(num_layers)]
 
         self.dropout = tf.keras.layers.Dropout(rate)
 
     def call(self, x, training, mask):
-
         seq_len = tf.shape(x)[1]
 
         # adding embedding and position encoding.
@@ -82,7 +80,6 @@ class Decoder(tf.keras.layers.Layer):
         self.dropout = tf.keras.layers.Dropout(rate)
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
-
         seq_len = tf.shape(x)[1]
         attention_weights = {}
 
@@ -96,8 +93,8 @@ class Decoder(tf.keras.layers.Layer):
             x, block1, block2 = self.dec_layers[i](x, enc_output, training,
                                                    look_ahead_mask, padding_mask)
 
-            attention_weights['decoder_layer{}_block1'.format(i+1)] = block1
-            attention_weights['decoder_layer{}_block2'.format(i+1)] = block2
+            attention_weights['decoder_layer{}_block1'.format(i + 1)] = block1
+            attention_weights['decoder_layer{}_block2'.format(i + 1)] = block2
 
         # x.shape == (batch_size, target_seq_len, d_model)
         return x, attention_weights
@@ -117,7 +114,6 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.dropout2 = tf.keras.layers.Dropout(rate)
 
     def call(self, x, training, mask):
-
         attn_output, _ = self.mha(x, x, x, mask)  # (batch_size, input_seq_len, d_model)
         attn_output = self.dropout1(attn_output, training=training)
         out1 = self.layernorm1(x + attn_output)  # (batch_size, input_seq_len, d_model)
@@ -145,7 +141,6 @@ class DecoderLayer(tf.keras.layers.Layer):
         self.dropout1 = tf.keras.layers.Dropout(rate)
         self.dropout2 = tf.keras.layers.Dropout(rate)
         self.dropout3 = tf.keras.layers.Dropout(rate)
-
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         # enc_output.shape == (batch_size, input_seq_len, d_model)
@@ -205,7 +200,8 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         scaled_attention, attention_weights = scaled_dot_product_attention(
             q, k, v, mask)
 
-        scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3])  # (batch_size, seq_len_q, num_heads, depth)
+        scaled_attention = tf.transpose(scaled_attention,
+                                        perm=[0, 2, 1, 3])  # (batch_size, seq_len_q, num_heads, depth)
 
         concat_attention = tf.reshape(scaled_attention,
                                       (batch_size, -1, self.d_model))  # (batch_size, seq_len_q, d_model)

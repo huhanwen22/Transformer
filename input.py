@@ -4,20 +4,22 @@ import tensorflow as tf
 BUFFER_SIZE = 20000
 BATCH_SIZE = 64
 
-examples, metadata = tfds.load('ted_hrlr_translate/pt_to_en', with_info=True,
-                               as_supervised=True)
-train_examples, val_examples = examples['train'], examples['validation']
 
-model_name = "ted_hrlr_translate_pt_en_converter"
-tf.keras.utils.get_file(
-    f"{model_name}.zip",
-    f"https://storage.googleapis.com/download.tensorflow.org/models/{model_name}.zip",
-    cache_dir='.', cache_subdir='', extract=True
-)
-tokenizers = tf.saved_model.load(model_name)
+def get_tokenizers():
+    model_name = "ted_hrlr_translate_pt_en_converter"
+    tf.keras.utils.get_file(
+        f"{model_name}.zip",
+        f"https://storage.googleapis.com/download.tensorflow.org/models/{model_name}.zip",
+        cache_dir='.', cache_subdir='', extract=True
+    )
+    tokenizers = tf.saved_model.load(model_name)
+
+    return tokenizers
 
 
 def tokenize_pairs(pt, en):
+    # todo: 优化tokenizers的获取方式
+    tokenizers = get_tokenizers()
     pt = tokenizers.pt.tokenize(pt)
     # Convert from ragged to dense, padding with zeros.
     pt = pt.to_tensor()
@@ -37,5 +39,12 @@ def make_batches(ds):
             .prefetch(tf.data.AUTOTUNE))
 
 
-train_batches = make_batches(train_examples)
-val_batches = make_batches(val_examples)
+def get_data():
+    examples, metadata = tfds.load('ted_hrlr_translate/pt_to_en', with_info=True,
+                                   as_supervised=True)
+    train_examples, val_examples = examples['train'], examples['validation']
+
+    train_batches = make_batches(train_examples)
+    val_batches = make_batches(val_examples)
+
+    return train_batches, val_batches
