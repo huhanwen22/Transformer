@@ -74,7 +74,6 @@ def main():
 
     ckpt = tf.train.Checkpoint(transformer=transformer,
                                optimizer=optimizer)
-
     checkpoint_path = "./checkpoints/train"
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
